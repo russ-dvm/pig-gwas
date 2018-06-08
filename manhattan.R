@@ -1,0 +1,67 @@
+library(tidyverse)
+
+## Import data
+salm <- read.table("~/snpChip/testing/test-mlma.mlma", h = T, sep = "\t")
+
+## To use qqman the data needs to be in a DF with columsn "CHR", "BP", "P", and "SNP"
+salm_qq <- data.frame("CHR" = as.integer(salm$Chr), "BP" = as.integer(salm$bp), "P" = as.numeric(salm$p), "SNP" = as.factor(salm$SNP))
+
+###***TMP***###
+#remove chr0, 21 and 22....
+salm_qq_sub <- subset(salm_qq, salm_qq$CHR != 0 & salm_qq$CHR != 21 & salm_qq$CHR != 22)
+
+## Perform the p adjustments
+source("~/scripts/fdr.R")
+qq_results <- fdr(salm_qq_sub, "P", 0.1)
+
+#Check to make sure the two methods agreed with each other...
+qq_results[qq_results$method.comp == F,]
+
+## Add in start/stop coordinates - these all have NA P values so won't actually be plotted.
+for (x in 1:20){
+  qq_results <- rbind(qq_results, c(x, 1, NA, NA))
+}
+qq_results <- rbind(qq_results, c(1, 315321322, NA, NA))
+qq_results <- rbind(qq_results, c(2, 162569375, NA, NA))
+qq_results <- rbind(qq_results, c(3, 144787322, NA, NA))
+qq_results <- rbind(qq_results, c(4, 143465943, NA, NA))
+qq_results <- rbind(qq_results, c(5, 111506441, NA, NA))
+qq_results <- rbind(qq_results, c(6, 157765593, NA, NA))
+qq_results <- rbind(qq_results, c(7, 134764511, NA, NA))
+qq_results <- rbind(qq_results, c(8, 148491826, NA, NA))
+qq_results <- rbind(qq_results, c(9, 153670197, NA, NA))
+qq_results <- rbind(qq_results, c(10, 79102373, NA, NA))
+qq_results <- rbind(qq_results, c(11, 87690581, NA, NA))
+qq_results <- rbind(qq_results, c(12, 63558571, NA, NA))
+qq_results <- rbind(qq_results, c(13, 218635234, NA, NA))
+qq_results <- rbind(qq_results, c(14, 153851969, NA, NA))
+qq_results <- rbind(qq_results, c(15, 157681621, NA, NA))
+qq_results <- rbind(qq_results, c(16, 86898991, NA, NA))
+qq_results <- rbind(qq_results, c(17, 69701581, NA, NA))
+qq_results <- rbind(qq_results, c(18, 61220071, NA, NA))
+qq_results <- rbind(qq_results, c(19, 144288218, NA, NA)) #X chrom
+qq_results <- rbind(qq_results, c(20, 1637716, NA, NA)) #Y chrom
+
+## Adjust the data frame to generate points for manhattan plotting
+source("~/scripts/manhattan.R")
+salm_man <- manhattan(qq_results)
+
+
+## Make chromosomes into factors (have to be numeric for the manhattan function, but better for coloring as a factor)
+salm_man$CHR <- factor(salm_man$CHR, levels = unique(salm_man$CHR))
+
+salm_test <- merge(salm_man, qq_results, by.x = "SNP", by.y = "SNP")
+
+## Plot
+ggplot(salm_man, aes(x = pos, y = logp, color = CHR)) + 
+  geom_point() +
+  theme_classic() +
+  scale_x_continuous(minor_breaks = minor_ticks, breaks = ticks, labels = labs) +
+  scale_color_identity() +
+  scale_y_continuous(expand = c(0,0), limits = c(0,8)) +
+  xlab("Chromosome") +
+  ylab("-log(p)")
+
+## QQ plot
+qqman::qq(salm_man$P)
+
