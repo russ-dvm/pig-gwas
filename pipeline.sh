@@ -12,6 +12,7 @@ plink2 --file complete --make-bed --allow-no-sex --1 --chr-set 18 --out complete
 # 2b. Keep-file should be two column tab-separated, Family_ID and Individual_ID (include a header)
 # 2c. Can also exclude some SNPs at this step: e.g. in initial testing, there were 105 SNPs mapped to chr0,21,and 22, but the porcine karyotype is 18,XY... can filter those out if desired, but **note** 21 may be pseudoautosomal X and 22 may be chrM. Not sure about 0.
 # awk '$1==0 || $1==21 || $1 ==22' complete.map >> exclude.snps
+# It might be worth excluding these along with the X chromosome. 
 # 2d. Check-sex. Plink2 has a build in tool for this, but I haven't quite figured out i) how to properly code the pseudoautosomal region and ii) what the coordinates of the pseudoautosomal region actually are. 
 # https://doi.org/10.1159/000351310 has identified one border at  X:6743567, but the second (tail) border is still unknown... Could just use the end of X? X:144288218 - tried this, didn't help at all.
 # Alternatively, AAS outputs computed sex, which can be compared to phenotype if desired using the script "check_gender.py" - need to do a little file finaggling (eg cut -f 2,5 complete.ped > known.sex, cut -f 1,8 sample_info.txt | sed 's/_.*CEL//' | sed 's/female/2/' sed 's/male/1/' > computed.sex)
