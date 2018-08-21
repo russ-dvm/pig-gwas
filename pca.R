@@ -1,9 +1,12 @@
 library(tidyverse)
 
 #### Read in data
-pca <- read.table("~/snpChip/testing/salmonella.pca.eigenvec", h = F)
-ei <- read.table("~/snpChip/testing/salmonella.pca.eigenval", h = F)
-deets <- read.table("~/snpChip/testing/salmonella_demo.txt", h = T, sep = "\t")
+pca <- read.table("~/snpChip/testing/russ/plink-pca.eigenvec", h = F)
+ei <- read.table("~/snpChip/testing/russ/plink-pca.eigenval", h = F)
+deets <- read.table("~/snpChip/testing/ref_files/salmonella_all_info.txt", h = T, sep = "\t")
+
+pca <- read.table("~/snpChip/testing/russ/gcta-pca.eigenvec", h = F)
+ei <- read.table("~/snpChip/testing/russ/gcta-pca.eigenval", h = F)
 
 #### Calculate the fraction of the total for each eigenvalue
 ei$prop <- ei$V1/sum(ei$V1)*100
@@ -22,3 +25,5 @@ ggplot(a, aes(x = V3, y = V4, color = diet)) + geom_point()+ xlab("PCA 1") + yla
 ggplot(a, aes(x = V3, y = V4, color = trial)) + geom_point()+ xlab("PCA 1") + ylab("PCA 2") +theme_bw()
 ggplot(a, aes(x = V3, y = V4, color = as.factor(pigpos))) + geom_point()+ xlab("PCA 1") + ylab("PCA 2") +theme_bw()
 ggplot(a, aes(x = V3, y = V4, color = genetics)) + geom_point()+ xlab("PCA 1") + ylab("PCA 2") +theme_bw()
+ggplot(a, aes(x = V3, y = V4, color = as.factor(farm))) + geom_point()+ xlab("PCA 1") + ylab("PCA 2") +theme_bw()
+

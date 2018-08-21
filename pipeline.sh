@@ -11,13 +11,13 @@ plink2 --file complete --make-bed --allow-no-sex --1 --chr-set 18 --out complete
 # 2a. Include MAF filtering here (could be included above)
 # 2b. Keep-file should be two column tab-separated, Family_ID and Individual_ID (include a header)
 # 2c. Can also exclude some SNPs at this step: e.g. in initial testing, there were 105 SNPs mapped to chr0,21,and 22, but the porcine karyotype is 18,XY... can filter those out if desired, but **note** 21 may be pseudoautosomal X and 22 may be chrM. Not sure about 0.
-# awk '$1==0 || $1==21 || $1 ==22' complete.map >> exclude.snps
+awk '$1==0 || $1==21 || $1 ==22' complete.map >> exclude.snps
 # It might be worth excluding these along with the X chromosome. 
 # 2d. Check-sex. Plink2 has a build in tool for this, but I haven't quite figured out i) how to properly code the pseudoautosomal region and ii) what the coordinates of the pseudoautosomal region actually are. 
 # https://doi.org/10.1159/000351310 has identified one border at  X:6743567, but the second (tail) border is still unknown... Could just use the end of X? X:144288218 - tried this, didn't help at all.
 # Alternatively, AAS outputs computed sex, which can be compared to phenotype if desired using the script "check_gender.py" - need to do a little file finaggling (eg cut -f 2,5 complete.ped > known.sex, cut -f 1,8 sample_info.txt | sed 's/_.*CEL//' | sed 's/female/2/' sed 's/male/1/' > computed.sex)
-plink2 --bfile complete --chr-set 18 --make-bed --allow-no-sex --keep salmonella_list.txt --exclude exclude.snps --out salmonella --maf 0.05
-
+plink2 --bfile complete --make-bed --allow-no-sex --keep salmonella_list.txt --exclude exclude.snps --out salmonella --maf 0.05
+--chr-set 18
 
 ## 3. Calculate missingness. This command will output two files, we are interested mostly in file.imiss. This file will tell us how many SNPs failed genotyping for each sample (N_MISS) as well as the fraction (F_MISS). The .lmiss file contains information sorted by SNP.
 # 3a. The data can be visualized in R with the script "qc_figs.R" 
@@ -29,7 +29,7 @@ plink2 --bfile salmonella --chr-set 18  --missing --out salmonella.missing
 
 ## 5. Check genotype call rates between cases/controls.
 # 5a. Output is a file with fraction missing in cases and controls and Fisher's exact test used to determine if the difference is significant. Anderson et al 2010 use a cutoff of p < 0.00001, not clear how that was chosen. Can also do multiple testing adjustment and see if any differences are significant (coded in "qc_figs.R")
-plink2 --bfile salmonella --chr-set 18  --test-missing --out salmonella.missing.case-control
+plink2 --bfile salmonella --chr-set 18 --test-missing --out salmonella.missing.case-control
 
 
 ## 6. Perform LD-pruning - 50 kb window, 5kb step, 0.2 r2
@@ -66,3 +66,11 @@ gcta64 --reml --pheno <pheno-file> --autosome-num 18 --maf 0.05 --mgrm <txt-file
 
 ## 10. MLMA analysis - this doesn't seem to accept any of our external variables (fixed/random)
 gcta64 --bfile <bed-file> --mlma --grm <grm> --pheno <pheno-file> --autosome-num 18 --out <out-file> --maf 0.05
+
+
+
+##### GEMMA
+plink2 --file <file> --maf 0.05 --make-bed --out <out>
+# make GRM
+gemma -bfile <file> --gk 1 -o <out>
+gemma -bfile <file> -k <grm> -lmm 4 -c <covariates> -o <out>

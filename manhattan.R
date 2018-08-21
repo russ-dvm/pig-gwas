@@ -1,10 +1,14 @@
 library(tidyverse)
 
 ## Import data
-salm <- read.table("~/snpChip/testing/test-mlma.mlma", h = T, sep = "\t")
+salm <- read.table("~/snpChip/testing/russ/test-mlma.mlma", h = T, sep = "\t")
+salm <- read.table("~/snpChip/testing/russ/output/test.assoc.txt", h = T, sep = "\t")
 
 ## To use qqman the data needs to be in a DF with columsn "CHR", "BP", "P", and "SNP"
-salm_qq <- data.frame("CHR" = as.integer(salm$Chr), "BP" = as.integer(salm$bp), "P" = as.numeric(salm$p), "SNP" = as.factor(salm$SNP))
+# salm_qq <- data.frame("CHR" = as.integer(salm$CHR), "BP" = as.integer(salm$BP), "P" = as.numeric(salm$P), "SNP" = as.factor(salm$SNP))
+#For gemma results use this one:
+salm_qq <- data.frame("CHR" = as.integer(salm$chr), "BP" = as.integer(salm$ps), "P" = as.numeric(salm$p_wald), "SNP" = as.factor(salm$rs))
+
 
 ###***TMP***###
 #remove chr0, 21 and 22....
@@ -60,8 +64,16 @@ ggplot(salm_man, aes(x = pos, y = logp, color = CHR)) +
   scale_color_identity() +
   scale_y_continuous(expand = c(0,0), limits = c(0,8)) +
   xlab("Chromosome") +
-  ylab("-log(p)")
-
-## QQ plot
-qqman::qq(salm_man$P)
-
+  ylab("-log(p)") +
+  geom_hline(yintercept = 6.30103, colour = "red") +
+  annotate("text", label = "p < 5x10-7", y = 6.30103, x = 2596603306, vjust = -0.5) +
+  geom_hline(yintercept = 4.30103, colour = "red", linetype = "dashed") +
+  annotate("text", label = "p < 5x10-5", y = 4.3013, x = 2596603306, vjust = -0.5) + 
+  ggtitle("Visit 2")
+v2
+ ## QQ plot
+# qqman::qq(salm_man$P)
+library(gridExtra)
+all <- arrangeGrob(v2, v3, v4, v5, nrow = 4)
+ggsave(all, file = "manhattans.pdf", units = "in" , height = 10, width = 8)
+ 

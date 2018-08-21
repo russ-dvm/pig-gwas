@@ -1,14 +1,14 @@
 library(tidyverse)
 
 ## Read in data
-imiss <- "~/snpChip/testing/salmonella.missing.imiss"
-lmiss <- "~/snpChip/testing/salmonella.missing.lmiss"
+imiss <- "~/snpChip/testing/russ/salmonella.missing.imiss"
+lmiss <- "~/snpChip/testing/russ/salmonella.samples.pruned.missing.lmiss"
 missing <- read.table(imiss, h = T)
 snp.missing <- read.table(lmiss, h = T)
-sex <- read.table("~/snpChip/testing/salmonella.sex.sexcheck", h = T) # plink sex
+sex <- read.table("~/snpChip/testing/russ/salmonella.sex.sexcheck", h = T) # plink sex
 sex.inhouse <- read.table("~/snpChip/testing/sex.check", h = F)
 
-cc.missing <- read.table("~/snpChip/testing/salmonella.missing.case-control.missing", h = T)
+cc.missing <- read.table("~/snpChip/testing/russ/salmonella.missing.case-control.missing", h = T)
 
 ## Sample level figures
 ggplot(missing, aes(x = N_MISS)) + geom_histogram(stat = "bin", binwidth = 10) +
@@ -17,14 +17,14 @@ ggplot(missing, aes(x = N_MISS)) + geom_histogram(stat = "bin", binwidth = 10) +
 ggplot(missing, aes(x = F_MISS*100)) + geom_histogram(stat = "bin") +
   xlab("Percent SNPs not genotyped") + ylab("Number of pigs")
 
-subset(missing, F_MISS*100 >=3)
+subset(missing, F_MISS*100 >=10)
 
 
 ## SNP level figures
 ggplot(snp.missing, aes(x = N_MISS)) + geom_histogram(stat = "bin")
 ggplot(snp.missing, aes(x = F_MISS*100)) + geom_histogram(stat = "bin")
 
-subset(missing, F_MISS*100 >= 2)
+subset(snp.missing, F_MISS*100 >= 2)
 
 
 ## Case-control figures
