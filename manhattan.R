@@ -1,8 +1,19 @@
 library(tidyverse)
 
+
 ## Import data
-salm <- read.table("~/snpChip/testing/russ/test-mlma.mlma", h = T, sep = "\t")
-salm <- read.table("~/snpChip/testing/russ/output/test.assoc.txt", h = T, sep = "\t")
+dir <- "~/snpChip/testing_round_1/"
+name <- "sal_sero_v5"
+out_name <- "sal_sero_v5_analysis"
+######## Don't touch
+
+read_in <- paste(dir, name, "/output/", out_name, ".assoc.txt", sep = "")
+write_out_man <- paste(dir, name, "/", out_name, "_manhattan.png", sep = "")
+write_out_qq <- paste(dir, name, "/", out_name, "_qqPlot.png", sep = "")
+
+salm <- read.table(read_in, h = T, sep = "\t")
+g_title <- out_name
+# salm <- read.table("~/snpChip/testing/russ/output/test.assoc.txt", h = T, sep = "\t")
 
 ## To use qqman the data needs to be in a DF with columsn "CHR", "BP", "P", and "SNP"
 # salm_qq <- data.frame("CHR" = as.integer(salm$CHR), "BP" = as.integer(salm$BP), "P" = as.numeric(salm$P), "SNP" = as.factor(salm$SNP))
@@ -57,7 +68,7 @@ salm_man$CHR <- factor(salm_man$CHR, levels = unique(salm_man$CHR))
 salm_test <- merge(salm_man, qq_results, by.x = "SNP", by.y = "SNP")
 
 ## Plot
-ggplot(salm_man, aes(x = pos, y = logp, color = CHR)) + 
+man <- ggplot(salm_man, aes(x = pos, y = logp, color = CHR)) + 
   geom_point() +
   theme_classic() +
   scale_x_continuous(minor_breaks = minor_ticks, breaks = ticks, labels = labs) +
@@ -69,11 +80,16 @@ ggplot(salm_man, aes(x = pos, y = logp, color = CHR)) +
   annotate("text", label = "p < 5x10-7", y = 6.30103, x = 2596603306, vjust = -0.5) +
   geom_hline(yintercept = 4.30103, colour = "red", linetype = "dashed") +
   annotate("text", label = "p < 5x10-5", y = 4.3013, x = 2596603306, vjust = -0.5) + 
-  ggtitle("Visit 2")
-v2
+  ggtitle(g_title)
+# man
+
+ggsave(man, file = write_out_man, units = "in", height = 3, width = 7)
+
  ## QQ plot
-# qqman::qq(salm_man$P)
-library(gridExtra)
-all <- arrangeGrob(v2, v3, v4, v5, nrow = 4)
-ggsave(all, file = "manhattans.pdf", units = "in" , height = 10, width = 8)
- 
+qqplot <- qqman::qq(salm_man$P)
+lamdaEst <- GenABEL::estlambda(salm_man$P, method = "median")
+main_title <- paste("Lambda estimate:", lamdaEst[1], sep = " ")
+title(main = main_title)
+
+dev.print(png, write_out_qq, height = 500, width = 500)
+

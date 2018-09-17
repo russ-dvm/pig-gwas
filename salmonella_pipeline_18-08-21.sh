@@ -5,6 +5,11 @@
 ## set variables:
 base=$1
 dir=/home/russ/snpChip
+out=$2
+
+
+# cp ~/Dropbox/temp/$1* .
+cp ~/snpChip/ref_files/sscrofa11.rsids .
 
 ## Create some tracking files
 touch excluded_info.txt
@@ -45,7 +50,7 @@ read -p "Re-map rsIDs to Sscrofa11? Warning: this will take awhile. Select no if
 if [[ $remap = "y" ]]
 then
 	echo -e "\nRe-mapping rsIDs from Sscrofa10 to Sscrofa11. This will take awhile (hours)..."
-	# python "$dir"/scripts/remap_rsIDs.py sscrofa10.rsids >> sscrofa11.rsids
+	python "$dir"/scripts/remap_rsIDs.py sscrofa10.rsids >> sscrofa11.rsids
 fi
 # How many, and which, SNPs don't match to Sscrofa11?
 echo -e "\nExcluding SNPs that do not map to Sscrofa11 (ie do not have an rsID in Sscrofa11)"
@@ -61,7 +66,7 @@ cat missing-in-sscrofa11.rsids >> exclude.snps
 # 1c. --chr-set sets the number of autosomes to 18, and the chrX to 18+1, chrY = 18+2, pseudoautosomal region of X to 18+3, and chrM to 18+4. This is producing some odd results - omit for now.
 # 1d. Exclude the SNPs from above
 # 1e. set the minor allele frequency
-plink2 --file "$base" --make-bed --allow-no-sex --1 --out salmonella --maf 0.05 --exclude exclude.snps
+plink2 --file "$base" --make-bed --allow-no-sex --out $2 --maf 0.05 --exclude exclude.snps
 
 ## 2. If all the data has been exported, you can subset only the specific samples that you want. Subset the data to include only the specific desired samples
 # 2b. Keep-file should be two column tab-separated, Family_ID and Individual_ID (include a header)
@@ -74,22 +79,22 @@ plink2 --file "$base" --make-bed --allow-no-sex --1 --out salmonella --maf 0.05 
 ## 3. Calculate missingness. This command will output two files, we are interested mostly in file.imiss. This file will tell us how many SNPs failed genotyping for each sample (N_MISS) as well as the fraction (F_MISS). The .lmiss file contains information sorted by SNP.
 # 3a. The data can be visualized in R with the script "qc_figs.R" 
 # Note: it's a good idea to re-run these sample and snp level metrics, as removing the SNPs at the earlier stage changes the overall results. For example, a sample that was 90% genotyped before may no longer be after the removal of the weird SNPs above.
-plink2 --bfile salmonella --missing --out salmonella.missing
+plink2 --bfile $2 --missing --out $2.missing
 
 ## Assuming a 90% genotyping rate:
-awk '$6 >= 0.10' salmonella.missing.imiss | sed '1d' |  tr -s ' ' '\t' | sed 's/^\t//' | cut -f 1,2 > failed.samples.txt
+awk '$6 >= 0.10' $2.missing.imiss | sed '1d' |  tr -s ' ' '\t' | sed 's/^\t//' | cut -f 1,2 > failed.samples.txt
 
 
 ## 4. Use the --remove flag to omit samples at this step.
 
-plink2 --bfile salmonella --remove failed.samples.txt --make-bed --out salmonella.samples.pruned
+plink2 --bfile $2 --remove failed.samples.txt --make-bed --out $2.samples.pruned
 
 ##### SNP LEVEL QC ######
 ## NOTE: All individuals requiring removal should be removed before proceeding to SNP filtering. ##
 
-plink2 --bfile salmonella.samples.pruned --missing --out salmonella.samples.pruned.missing
+plink2 --bfile $2.samples.pruned --missing --out $2.samples.pruned.missing
 
-awk '$5 >= 0.05' salmonella.samples.pruned.missing.lmiss | sed '1d' | tr -s ' ' '\t' | sed 's/^\t//' | cut -f 1,2 > failed.snps.txt
+awk '$5 >= 0.05' $2.samples.pruned.missing.lmiss | sed '1d' | tr -s ' ' '\t' | sed 's/^\t//' | cut -f 1,2 > failed.snps.txt
 
 ## 5. Check genotype call rates between cases/controls.
 # 5a. Output is a file with fraction missing in cases and controls and Fisher's exact test used to determine if the difference is significant. Anderson et al 2010 use a cutoff of p < 0.00001, not clear how that was chosen. Can also do multiple testing adjustment and see if any differences are significant (coded in "qc_figs.R")
@@ -97,13 +102,13 @@ awk '$5 >= 0.05' salmonella.samples.pruned.missing.lmiss | sed '1d' | tr -s ' ' 
 read -p "Is the data case-control or quantitative? (cc or q)" type
 if [[ $type == "cc" ]]
 then
-	plink2 --bfile salmonella.samples.pruned --test-missing --out salmonella.missing.case-control
-	awk '$5 < 0.00001' salmonella.missing.case-control.missing | tr -s ' ' '\t' | sed 's/^\t//' | cut -f 1,2 >> failed.snps.txt
+	plink2 --bfile $2.samples.pruned --test-missing --out $2.missing.case-control
+	awk '$5 < 0.00001' $2.missing.case-control.missing | tr -s ' ' '\t' | sed 's/^\t//' | cut -f 1,2 >> failed.snps.txt
 fi
 
 
 ## Remove failed snps:
-plink2 --bfile salmonella.samples.pruned --exclude failed.snps.txt --maf 0.05 --make-bed --out salmonella.final
+plink2 --bfile $2.samples.pruned --exclude failed.snps.txt --maf 0.05 --make-bed --out $2.final
 
 ## 6. Perform LD-pruning - 50 kb window, 5kb step, 0.2 r2
 # 6a. The LD pruned dataset will be used to perform a PCA
@@ -113,9 +118,16 @@ plink2 --bfile salmonella.samples.pruned --exclude failed.snps.txt --maf 0.05 --
 ## 7. PCA. Can specify the number of eigenvalues after the --pca flag if desired (default is 20). The PCA can be visualized with the R script "pca.R"
 # plink2 --bfile salmonella.pruned --pca --out salmonella.pca
 
+### COVARIATES
+read -p "Pausing to make sure you have a covariates file prepared. Hit enter when you do"
+
+
 ### GEMMA
 # make GRM
-gemma -bfile salmonella.final -gk 1 -o salmonella-grm
+gemma -bfile $2.final -gk 1 -o $2-grm
 #Perform single snp analysis
-gemma -bfile salmonella.final -k output/salmonella-grm.cXX.txt -lmm 4 -c -o 
+gemma -bfile $2.final -k output/$2-grm.cXX.txt -lmm 4 -c covariates.txt -o $2
 # Covariates can be generated using the covariate_generator.R script. Will have to re-construct a PED file with updated sample numbers.
+
+## Generate a list of sig SNPs only:
+awk '$12 <= 0.00005 || $13 <= 0.00005 || $14 <= 0.00005' output/"$2".assoc.txt > output/"$2".sig.snps.txt
