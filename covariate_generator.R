@@ -1,14 +1,11 @@
-library(tidyverse)
-
-#PED
-# exp_data <- read.table("~/snpChip/testing/corinne/corinne.ped", sep = "\t")
-# ped <- exp_data[,c(1:6)]
-#FAM
-dir <- "~/snpChip/testing_round_1/"
+#### FOR USE WITH GEMMA!
+## Set variables
+dir <- "~/snpChip/round_2/"
 name <- "sal_titre_v5"
 out_name <- "sal_titre_v5_analysis"
-######## Don't touch
 
+
+######## Don't touch
 read_in <- paste(dir, name, "/", out_name, ".final.fam", sep = "")
 out_dir <- paste(dir, name,"/", "covariates.txt", sep = "")
 
@@ -32,22 +29,31 @@ combo$seas6_int <- ifelse(combo$seas6 == "spring", combo$seas6_int <- 1, ifelse(
 
 # According to C Schutt's analysis of the variables (using linear or logistic regression with V Farzan):
 # "The significant variables (univar analysis) were:
-# # Seropositivity (0/1): sal (categorical) and age (non-normal distribution) were significant.
-# # S/P (titres): sal, trial, season (all categorical), and age (non-normal distribution) were significant."
+### THESE WERE USED FOR ANALYSIS ROUND 1. THE SAME COVARIATES WERE USED FOR ALL TIME POINTS.
+## Seropositivity (0/1): sal (categorical) and age (non-normal distribution) were significant.
+## S/P (titres): sal, trial, season (all categorical), and age (non-normal distribution) were significant."
+## manual covariate definition:
+# covars <- c("farm")
 
 
-## Enter the name(s) of the covariates
-covars <- c("age5", "sal5", "trial_int", "seas5_int")
+## Perhaps more reproducible way is to use the covariate_selector function that has a predefined data frame of the covariates.
+source("~/snpChip/scripts/covariate_selector.R")
+covars <- assign_covars(name)
 
-
+## add in the initial ranking to ensure the output is in the same order as the original data
 covars_rank <- c(covars, "rank")
 gemma1 <- combo[,covars_rank]
+
+## add in the required list of 1s (see gemma manual)
 gemma1$int <- 1
 
+## reorder according to the original input order
 gemma2 <- gemma1[order(gemma1$rank),]
 
+## select only the vector of 1s and the covariates, and omit the ranks
 covars_int <- c("int", covars)
 gemma3 <- gemma2[,covars_int]
 
+## write out for incorporation into the gemma model.
 write.table(gemma3, file = out_dir, row.names = F, quote = F, col.names = F)
 

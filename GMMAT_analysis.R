@@ -1,24 +1,21 @@
 library(ggplot2)
 library(GMMAT)
 
-#PED
-# exp_data <- read.table("~/snpChip/testing/corinne/corinne.ped", sep = "\t")
-# ped <- exp_data[,c(1:6)]
+
 #### SET VARIABLES ####
 
 dir <- "~/snpChip/round_2/"
-sample <- "sal_shed_v2-6"
+sample <- "sal_shed_v2-5"
 
 
-## Enter the name(s) of the covariates and the phenotype of interest
+## Automatically select the covariates based on the data frame in covariate_selector.R
+## Check the source file to see what covariates were used for which timepoint, or to alter them.
 source("~/snpChip/scripts/covariate_selector.R")
 covars <- assign_covars(sample)
 
-##DEPRECATED BUT KEPT FOR POSTERITY....
+##DEPRECATED BUT KEPT FOR POSTERITY....the manual way of doing things...
 # covars <- c("diet_int", "trial_int", "sal26") ## SHEDDING
 # covars <- c("seas2_int", "sal2") ## SEROPOSITIVITY
-
-
 
 #### IMPORT DATA ####
 ### Don't touch
@@ -35,8 +32,7 @@ master <- read.table("~/snpChip/testing/ref_files/salmonella_all_info.txt", h = 
 combo <- merge(exp_data, master, by.x = "V2", by.y = "newid")
 
 #### GENERATE PHENO FILE ####
-
-## Reformat categorical variables into integers for subsequent analysis in GEMMA - needed for GMMAT?
+## Reformat categorical variables into integers for subsequent analysis in GEMMA - needed for GMMAT? - yes.
 
 combo$diet_int <- ifelse(combo$diet == "HC", combo$diet <- 1, combo$diet <- 2)
 combo$trial_int <- ifelse(combo$trial == "summer", combo$trial_int <- 1, combo$trial_int <- 2)
@@ -53,12 +49,9 @@ combo$sal25 <- ifelse((combo$sal2 == 0 | is.na(combo$sal2)) & (combo$sal3 == 0 |
 # Pheno for v2-6
 combo$sal26 <- ifelse((combo$sal2 == 0 | is.na(combo$sal2)) & (combo$sal3 == 0 | is.na(combo$sal3)) & (combo$sal4 == 0 | is.na(combo$sal4)) & (combo$sal5 == 0 | is.na(combo$sal5)) & (combo$sal6 == 0 | is.na(combo$sal6)), 0, 1)
 
-# According to C Schutt's analysis of the variables (using linear or logistic regression with V Farzan):
-# "The significant variables (univar analysis) were:
-# # Seropositivity (0/1): sal (categorical) and age (non-normal distribution) were significant.
-# # S/P (titres): sal, trial, season (all categorical), and age (non-normal distribution) were significant."
-# SHEDDING: diet, age, season, trial, shedding
-missing <- combo[is.na(combo$diet_int) | is.na(combo$trial_int) | is.na(combo$sal26), c(2,1)]
+## Remove any samples that are missing any of the covariate information.
+
+missing <- combo[is.na(combo$diet_int) | is.na(combo$trial_int) | is.na(combo$sal25), c(2,1)]
 ## generate a file to remove samples that are missing any of the phenotypic information
 # missing <- combo[is.na(combo$age5) | is.na(combo$sal5) | is.na(combo$farm) | is.na(combo$seas5_int), c(2,1)]
 write.table(missing, file = missing_out, row.names = F, col.names = F, quote = F, sep = "\t")
@@ -83,7 +76,7 @@ gmmat_score <- paste(sample, "_gmmat_scores.txt", sep = "")
 
 #### FIT THE NULL MODEL ####
 # model <- glmmkin(fixed = sal6 ~ diet_int + trial_int + seas6_int + age6, data = pheno3, kins = grm, family = binomial(link = "logit"))
-model <- glmmkin(fixed = sal26 ~ diet_int + trial_int, data = pheno3, kins = grm, family = binomial(link = "logit"))
+model <- glmmkin(fixed = sal25 ~ diet_int + trial_int, data = pheno3, kins = grm, family = binomial(link = "logit"))
 
 
 glmm.score(model, infile = new_plink, outfile = gmmat_score)

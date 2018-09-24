@@ -1,28 +1,32 @@
-library(tidyverse)
+library(ggplot2)
 
+
+## Define variables
+dir <- "~/snpChip/round_2/"
+name <- "sal_titre_v5"
+out_name <- "sal_tire_v5_analysis"
+analysis_type <- "gemma"
+
+######## Don't touch
+out_name <- paste(name, "_analysis", sep = "")
+read_in <- paste(dir, name, "/output/", out_name, ".assoc.txt", sep = "")
+
+write_out_man <- paste(dir, name, "/", out_name, "_", analysis_type, "_manhattan.png", sep = "")
+write_out_qq <- paste(dir, name, "/", out_name, "_", analysis_type, "_qqPlot.png", sep = "")
+
+g_title <- out_name
 
 ## Import data
-dir <- "~/snpChip/testing_round_1/"
-name <- "sal_sero_v5"
-out_name <- "sal_sero_v5_analysis"
-######## Don't touch
-
-read_in <- paste(dir, name, "/output/", out_name, ".assoc.txt", sep = "")
-write_out_man <- paste(dir, name, "/", out_name, "_manhattan.png", sep = "")
-write_out_qq <- paste(dir, name, "/", out_name, "_qqPlot.png", sep = "")
-
 salm <- read.table(read_in, h = T, sep = "\t")
-g_title <- out_name
-# salm <- read.table("~/snpChip/testing/russ/output/test.assoc.txt", h = T, sep = "\t")
 
 ## To use qqman the data needs to be in a DF with columsn "CHR", "BP", "P", and "SNP"
-# salm_qq <- data.frame("CHR" = as.integer(salm$CHR), "BP" = as.integer(salm$BP), "P" = as.numeric(salm$P), "SNP" = as.factor(salm$SNP))
 #For gemma results use this one:
 salm_qq <- data.frame("CHR" = as.integer(salm$chr), "BP" = as.integer(salm$ps), "P" = as.numeric(salm$p_wald), "SNP" = as.factor(salm$rs))
 
 
 ###***TMP***###
 #remove chr0, 21 and 22....
+#doesn't really do anything - these snps are removed during the PLINK filtering stage.
 salm_qq_sub <- subset(salm_qq, salm_qq$CHR != 0 & salm_qq$CHR != 21 & salm_qq$CHR != 22)
 
 ## Perform the p adjustments
