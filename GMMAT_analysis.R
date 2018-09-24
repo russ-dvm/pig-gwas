@@ -5,13 +5,22 @@ library(GMMAT)
 #### SET VARIABLES ####
 
 dir <- "~/snpChip/round_2/"
-sample <- "sal_shed_v2-5"
+sample <- "sal_shed_v2-6"
 
 
 ## Automatically select the covariates based on the data frame in covariate_selector.R
 ## Check the source file to see what covariates were used for which timepoint, or to alter them.
 source("~/snpChip/scripts/covariate_selector.R")
 covars <- assign_covars(sample)
+
+## THE MODEL
+sal_or_sero <- ifelse(strsplit(sample, split = "_")[[1]][2] == "sero", "sero", "sal")
+modelPhenoPos <- grep(sal_or_sero, covars)
+modelPheno <- covars[modelPhenoPos]
+modelCovarsList <- covars[-modelPhenoPos]
+modelCovars <- paste(modelCovarsList, collapse = "+")
+modelFinal <- paste(modelPheno, "~", modelCovars, sep = " ")
+modelFinal
 
 ##DEPRECATED BUT KEPT FOR POSTERITY....the manual way of doing things...
 # covars <- c("diet_int", "trial_int", "sal26") ## SHEDDING
@@ -50,10 +59,19 @@ combo$sal25 <- ifelse((combo$sal2 == 0 | is.na(combo$sal2)) & (combo$sal3 == 0 |
 combo$sal26 <- ifelse((combo$sal2 == 0 | is.na(combo$sal2)) & (combo$sal3 == 0 | is.na(combo$sal3)) & (combo$sal4 == 0 | is.na(combo$sal4)) & (combo$sal5 == 0 | is.na(combo$sal5)) & (combo$sal6 == 0 | is.na(combo$sal6)), 0, 1)
 
 ## Remove any samples that are missing any of the covariate information.
+## AUTOMATED sample removal
+## Determine column values based on the covar names
+covar_columns <- lapply(covars, function(x) {which(colnames(combo) == x)})
+## Identify missing information in all of the columns
+missing_by_covar <- lapply(covar_columns, function(x) {is.na(combo[,x])})
+## Collapse the list to one final list in which any missing sample is keps
+missingAny <- Reduce("|", missing_by_covar)
+## Identify samples with any of the missing info
+missing <- combo[missingAny, c(2,1)]
+## Old, manual method (depracated): 
+# missing <- combo[is.na(combo$sal2) | is.na(combo$seas2_int), c(2,1)]
 
-missing <- combo[is.na(combo$diet_int) | is.na(combo$trial_int) | is.na(combo$sal25), c(2,1)]
-## generate a file to remove samples that are missing any of the phenotypic information
-# missing <- combo[is.na(combo$age5) | is.na(combo$sal5) | is.na(combo$farm) | is.na(combo$seas5_int), c(2,1)]
+
 write.table(missing, file = missing_out, row.names = F, col.names = F, quote = F, sep = "\t")
 setwd(paste(dir, sample, sep = ""))
 old_plink <- paste(out_name, ".final", sep = "")
@@ -75,8 +93,8 @@ geno_wald <- paste(sample, "_analysis.final", sep = "")
 gmmat_score <- paste(sample, "_gmmat_scores.txt", sep = "")
 
 #### FIT THE NULL MODEL ####
-# model <- glmmkin(fixed = sal6 ~ diet_int + trial_int + seas6_int + age6, data = pheno3, kins = grm, family = binomial(link = "logit"))
-model <- glmmkin(fixed = sal25 ~ diet_int + trial_int, data = pheno3, kins = grm, family = binomial(link = "logit"))
+
+model <- glmmkin(fixed = modelFinal, data = pheno3, kins = grm, family = binomial(link = "logit"))
 
 
 glmm.score(model, infile = new_plink, outfile = gmmat_score)
@@ -130,7 +148,7 @@ qqGmmatMan$CHR <- factor(qqGmmatMan$CHR, levels = unique(qqGmmatMan$CHR))
 
 g_title <- paste(out_name, "gmmat/logistic")
 
-## Plot
+## Manhattan Plot
 man <- ggplot(qqGmmatMan, aes(x = pos, y = logp, color = CHR)) + 
   geom_point() +
   theme_classic() +
@@ -143,12 +161,11 @@ man <- ggplot(qqGmmatMan, aes(x = pos, y = logp, color = CHR)) +
   annotate("text", label = "p < 5x10-7", y = 6.30103, x = 2596603306, vjust = -0.5) +
   geom_hline(yintercept = 4.30103, colour = "red", linetype = "dashed") +
   annotate("text", label = "p < 5x10-5", y = 4.3013, x = 2596603306, vjust = -0.5) + 
-  ggtitle(g_title)
-man
-
-write_out_man_gmmat <- paste(dir, sample, "/", out_name, "_gmmat_manhattan.png", sep = "")
+  ggtitle(paste(g_title, modelFinal, sep = "  |  "))
+# man
 
 
+write_out_man_gmmat <- paste(dir, sample, "/", out_name, "_gmmat_manhattan1.png", sep = "")
 ggsave(man, file = write_out_man_gmmat, units = "in", height = 3, width = 7)
 
 ## QQ plot
@@ -159,7 +176,5 @@ title(main = main_title)
 
 write_out_qq_gmmat <- paste(dir, sample, "/", out_name, "_gmmat_qqPlot.png", sep = "")
 
-
 dev.print(png, write_out_qq_gmmat, height = 500, width = 500)
-
 
