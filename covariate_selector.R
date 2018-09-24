@@ -24,20 +24,20 @@ covariates <- data.frame("sample" = as.character(
     c(
       "sal2,seas2_int", #shed_v2
       "sal3", #shed_v3
-      "sal4,age4,trial_int,sero4_int", #shed_v4
-      "sal5,age5,seas5_int", #shed_v5
+      "sal4,age4,trial_int,sero4", #shed_v4
+      "sal5,age5,farm,seas5_int", #shed_v5
       "diet_int,trial_int,sal25", #shed_v2-5
       "diet_int,trial_int,sal26", #shed_v2-6
       
       "seas2_int,sero2", #sero_v2
-      "farm_int,sero3", #sero_v3
-      "farm_int,sero4,sal4", #sero_v4
-      "farm_int,sero5", #sero_v5
+      "farm,sero3", #sero_v3
+      "farm,sero4,sal4", #sero_v4
+      "farm,sero5", #sero_v5
       
       "seas2_int", #titre_v2
-      "farm_int,sal3,diet_int", #titre_v3
+      "farm,sal3,diet_int", #titre_v3
       "sal4,trial_int", #titre_v4
-      "farm_int" #titre_v5
+      "farm" #titre_v5
       
     )
   )
