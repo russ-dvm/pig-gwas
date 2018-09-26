@@ -66,7 +66,7 @@ cat missing-in-sscrofa11.rsids >> exclude.snps
 # 1c. --chr-set sets the number of autosomes to 18, and the chrX to 18+1, chrY = 18+2, pseudoautosomal region of X to 18+3, and chrM to 18+4. This is producing some odd results - omit for now.
 # 1d. Exclude the SNPs from above
 # 1e. set the minor allele frequency
-plink2 --file "$base" --make-bed --allow-no-sex --out $2 --maf 0.05 --exclude exclude.snps
+plink2 --file "$base" --make-bed --allow-no-sex --1 --out $2 --maf 0.05 --exclude exclude.snps
 
 ## 2. If all the data has been exported, you can subset only the specific samples that you want. Subset the data to include only the specific desired samples
 # 2b. Keep-file should be two column tab-separated, Family_ID and Individual_ID (include a header)
