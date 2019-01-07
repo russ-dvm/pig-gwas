@@ -2,9 +2,9 @@ library(ggplot2)
 
 
 ## Define variables
-dir <- "~/snpChip/round_2/"
-name <- "sal_titre_v5"
-out_name <- "sal_tire_v5_analysis"
+dir <- "~/snpChip/round_3/"
+name <- "sal_shed_v2-6"
+out_name <- paste(name, "_analysis", sep = "")
 analysis_type <- "gemma"
 
 ######## Don't touch
@@ -14,7 +14,7 @@ read_in <- paste(dir, name, "/output/", out_name, ".assoc.txt", sep = "")
 write_out_man <- paste(dir, name, "/", out_name, "_", analysis_type, "_manhattan.png", sep = "")
 write_out_qq <- paste(dir, name, "/", out_name, "_", analysis_type, "_qqPlot.png", sep = "")
 
-g_title <- out_name
+g_title <- paste(out_name, "gemma", sep = "  |  ")
 
 ## Import data
 salm <- read.table(read_in, h = T, sep = "\t")

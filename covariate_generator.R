@@ -1,9 +1,8 @@
 #### FOR USE WITH GEMMA!
 ## Set variables
-dir <- "~/snpChip/round_2/"
-name <- "sal_titre_v5"
-out_name <- "sal_titre_v5_analysis"
-
+dir <- "~/snpChip/round_3/"
+name <- "sal_shed_v2-6"
+out_name <- paste(name, "_analysis", sep = "")
 
 ######## Don't touch
 read_in <- paste(dir, name, "/", out_name, ".final.fam", sep = "")
@@ -37,8 +36,10 @@ combo$seas6_int <- ifelse(combo$seas6 == "spring", combo$seas6_int <- 1, ifelse(
 
 
 ## Perhaps more reproducible way is to use the covariate_selector function that has a predefined data frame of the covariates.
+## Note that this script was written for GMMAT which requires the phenotype to be defined. GEMMA does not need this. Needs to be removed.
 source("~/snpChip/scripts/covariate_selector.R")
 covars <- assign_covars(name)
+covars <- covars[-1]
 
 ## add in the initial ranking to ensure the output is in the same order as the original data
 covars_rank <- c(covars, "rank")
@@ -53,7 +54,7 @@ gemma2 <- gemma1[order(gemma1$rank),]
 ## select only the vector of 1s and the covariates, and omit the ranks
 covars_int <- c("int", covars)
 gemma3 <- gemma2[,covars_int]
-
+covars
 ## write out for incorporation into the gemma model.
 write.table(gemma3, file = out_dir, row.names = F, quote = F, col.names = F)
 

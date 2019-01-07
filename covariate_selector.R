@@ -7,13 +7,16 @@ covariates <- data.frame("sample" = as.character(
       "sal_shed_v3",
       "sal_shed_v4",
       "sal_shed_v5",
+      "sal_shed_v6",
       "sal_shed_v2-5",
       "sal_shed_v2-6",
+      "sal_shed_v5-6",
       
       "sal_sero_v2",
       "sal_sero_v3",
       "sal_sero_v4",
       "sal_sero_v5",
+      "sal_sero_v3-5",
       
       "sal_titre_v2",
       "sal_titre_v3",
@@ -26,13 +29,16 @@ covariates <- data.frame("sample" = as.character(
       "sal3", #shed_v3
       "sal4,age4,trial_int,sero4", #shed_v4
       "sal5,age5,farm,seas5_int", #shed_v5
+      "sal6,trial,age6,seas6_int", #shed_v6
       "sal25,diet_int,trial_int", #shed_v2-5
       "sal26", #shed_v2-6
+      "sal56,trial", #shed_v5-6
       
       "sero2,seas2_int", #sero_v2
       "sero3,farm", #sero_v3
       "sero4,farm,sal4", #sero_v4
       "sero5,farm", #sero_v5
+      "sero35,farm", #sero_v3-5
       
       "seas2_int", #titre_v2
       "farm,sal3,diet_int", #titre_v3

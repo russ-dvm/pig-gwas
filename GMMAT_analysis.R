@@ -4,8 +4,8 @@ library(GMMAT)
 
 #### SET VARIABLES ####
 
-dir <- "~/snpChip/round_2/"
-sample <- "sal_shed_v2-6"
+dir <- "~/snpChip/round_3/"
+sample <- "sal_sero_v3-5"
 
 
 ## Automatically select the covariates based on the data frame in covariate_selector.R
@@ -52,11 +52,18 @@ combo$seas4_int <- ifelse(combo$seas4 == "spring", combo$seas4_int <- 1, ifelse(
 combo$seas5_int <- ifelse(combo$seas5 == "spring", combo$seas5_int <- 1, ifelse(combo$seas5 == "summer", combo$seas5_int <- 2, ifelse(combo$seas5 == "fall", combo$seas5_int <- 3, combo$seas5_int <- 4)))
 combo$seas6_int <- ifelse(combo$seas6 == "spring", combo$seas6_int <- 1, ifelse(combo$seas6 == "summer", combo$seas6_int <- 2, ifelse(combo$seas6 == "fall", combo$seas6_int <- 3, combo$seas6_int <- 4)))
 
-## Pheno for v2-5
+## Pheno for shed_v2-5
 combo$sal25 <- ifelse((combo$sal2 == 0 | is.na(combo$sal2)) & (combo$sal3 == 0 | is.na(combo$sal3)) & (combo$sal4 == 0 | is.na(combo$sal4)) & (combo$sal5 == 0 | is.na(combo$sal5)), 0, 1)
 
-# Pheno for v2-6
+# Pheno for shed_v2-6
 combo$sal26 <- ifelse((combo$sal2 == 0 | is.na(combo$sal2)) & (combo$sal3 == 0 | is.na(combo$sal3)) & (combo$sal4 == 0 | is.na(combo$sal4)) & (combo$sal5 == 0 | is.na(combo$sal5)) & (combo$sal6 == 0 | is.na(combo$sal6)), 0, 1)
+
+# Pheno for shed_v5-6
+combo$sal56 <- ifelse((combo$sal5 == 0 | is.na(combo$sal5)) & (combo$sal6 == 0 | is.na(combo$sal6)), 0, 1)
+
+# Pheno for sero_v3-5
+combo$sero35 <- ifelse((combo$sero3 == 0 | is.na(combo$sero3)) & (combo$sero4 == 0 | is.na(combo$sero4)) & (combo$sero5 == 0 | is.na(combo$sero5)), 0, 1)
+
 
 ## Remove any samples that are missing any of the covariate information.
 ## AUTOMATED sample removal
@@ -93,7 +100,6 @@ geno_wald <- paste(sample, "_analysis.final", sep = "")
 gmmat_score <- paste(sample, "_gmmat_scores.txt", sep = "")
 
 #### FIT THE NULL MODEL ####
-
 model <- glmmkin(fixed = modelFinal, data = pheno3, kins = grm, family = binomial(link = "logit"))
 
 
@@ -147,29 +153,42 @@ qqGmmatMan <- manhattan(qqGmmatFdr)
 qqGmmatMan$CHR <- factor(qqGmmatMan$CHR, levels = unique(qqGmmatMan$CHR))
 
 g_title <- paste(out_name, "gmmat/logistic")
+numSnps <- sum(!is.na(qqGmmatMan$P))
+numSnpsTitle <- paste("num SNPS:", numSnps, sep = " ")
+caseCol <- grep(sal_or_sero, colnames(pheno3))
+cases <- sum(na.omit(pheno3)[, caseCol])
+controls <- nrow(na.omit(pheno3)) - cases
+ccTitle <- paste("cases:", cases, "controls:", controls, sep = " ")
 
 ## Manhattan Plot
 man <- ggplot(qqGmmatMan, aes(x = pos, y = logp, color = CHR)) + 
   geom_point() +
   theme_classic() +
+  theme(text = element_text(size = 12)) + 
   scale_x_continuous(minor_breaks = minor_ticks, breaks = ticks, labels = labs) +
   scale_color_identity() +
+  # scale_color_manual(values = c("blue", "red","blue", "red","blue", "red","blue", "red","blue", "red","blue", "red","blue", "red","blue", "red","blue", "red","blue", "red", "green")) +
+  theme(legend.position = "none") +
   scale_y_continuous(expand = c(0,0), limits = c(0,8)) +
   xlab("Chromosome") +
-  ylab("-log(p)") +
+  ylab("-log(p-value)") +
   geom_hline(yintercept = 6.30103, colour = "red") +
-  annotate("text", label = "p < 5x10-7", y = 6.30103, x = 2596603306, vjust = -0.5) +
-  geom_hline(yintercept = 4.30103, colour = "red", linetype = "dashed") +
-  annotate("text", label = "p < 5x10-5", y = 4.3013, x = 2596603306, vjust = -0.5) + 
-  ggtitle(paste(g_title, modelFinal, sep = "  |  "))
+  annotate("text", label = expression(paste("p < 5x", 10^-7)), y = 6.30103, x = 2596603306, vjust = -0.5) +
+  geom_hline(yintercept = 5, colour = "red", linetype = "dashed") +
+  annotate("text", label = expression(paste("p < 1x", 10^-5)), y = 5, x = 2596603306, vjust = -0.5) # + 
+  # ggtitle(paste(g_title, modelFinal, "\n", ccTitle, numSnpsTitle, sep = "  |  "))
 # man
-
+man
 
 write_out_man_gmmat <- paste(dir, sample, "/", out_name, "_gmmat_manhattan1.png", sep = "")
 ggsave(man, file = write_out_man_gmmat, units = "in", height = 3, width = 7)
 
 ## QQ plot
 qqplot <- qqman::qq(qqGmmatMan$P)
+## With modified axis labels
+source("~/snpChip/scripts/qq2.R")
+qqplot2 <- qq2(qqGmmatMan$P)
+
 lamdaEst <- GenABEL::estlambda(qqGmmatMan$P, method = "median")
 main_title <- paste("Lambda estimate:", lamdaEst[1], sep = " ")
 title(main = main_title)
